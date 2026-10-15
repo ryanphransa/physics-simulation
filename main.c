@@ -40,19 +40,11 @@ int main(void)
 
     bool running = true;
 
-    double Q_x = 10;
-    double Q_y = 300;
-
-    double q_x[100];
-    double q_y[100];
-
-    int particles_amount = 0;
-
+    double Q_x = 250, Q_y = 250;
+    double q_x[10000], q_y[10000];
+    int amount_q = 0;
     double tick = 0;
-
-    double a[100] = {0};
-
-    double Q = 4, q = -4;
+    double a[1000] = {0}, b[1000] = {0};
 
     while (running)
     {
@@ -65,7 +57,7 @@ int main(void)
             30
         };
 
-        SDL_FRect proof_particle[particles_limit];
+        SDL_FRect particle_q[1000];
 
         /* INPUT */
         while (SDL_PollEvent(&event))
@@ -77,27 +69,15 @@ int main(void)
         /* UPDATE */
         const bool *keys = SDL_GetKeyboardState(NULL);
 
-        if (keys[SDL_SCANCODE_A] && tick > 1000) {
-            q_x[particles_amount] = arc4random_uniform(471);
-            q_y[particles_amount] = arc4random_uniform(471);
+        if (keys[SDL_SCANCODE_A] && tick > 2000) {
+            q_x[amount_q] = arc4random_uniform(471);
+            q_y[amount_q] = arc4random_uniform(471);
 
-            ++particles_amount;
+            a[amount_q] = (Q_x - q_x[amount_q]) / (Q_y - q_y[amount_q]);
+
+            ++amount_q;
+
             tick = 0;
-        }
-
-        for (size_t j = particles_limit; j > 0; j--) {
-            proof_particle[j] = (SDL_FRect){q_x[j], q_y[j], 5, 5};
-        }
-
-        /* MATH */
-        for (size_t j = 0; j < particles_amount; j++) {
-            if (q_x[j] > Q_x)
-                q_x[j] -= 0.01;
-            else if (q_x[j] < Q_x)
-                q_x[j] += 0.01;
-
-            a[j] = (q_x[j] - Q_x) / (q_y[j] - Q_y);
-            q_y[j] = Q_y - Q_x * a[j];
         }
 
         /* RENDER */
@@ -107,17 +87,22 @@ int main(void)
         SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255);
         SDL_RenderFillRect(renderer, &particle_Q);
 
-        for (size_t j = 0; j < particles_amount; j++) {
+        for (size_t j = 0; j < amount_q; j++) {
+            if (q_x[j] > Q_x)
+                q_x[j] -= 0.01;
+            else if (q_x[j] < Q_x)
+                q_x[j] += 0.01;
+
+            q_y[j] = a[j] * q_x[j] + Q_y - Q_x * a[j];
+
+            particle_q[j] = (SDL_FRect){q_x[j], q_y[j], 5, 5};
+
             SDL_SetRenderDrawColor(renderer, 255, 0, 255, 255);
-            SDL_RenderFillRect(renderer, &proof_particle[j]);
+            SDL_RenderFillRect(renderer, &particle_q[j]);
         }
 
-        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-        SDL_RenderFillRect(renderer, &proof_particle[4]);
-
-        ++tick;
-
         SDL_RenderPresent(renderer);
+        ++tick;
     }
 
     SDL_DestroyRenderer(renderer);
